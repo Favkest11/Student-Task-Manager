@@ -1,0 +1,16 @@
+
+.logo-graduation-cap{
+  color: rgb(61, 14, 172);
+}
+#logo-wrapper-graduation-cap{
+  background: hsla(239, 76%, 75%, 0.616);
+  border-radius: 100%;
+  width: 2rem;
+  height: 2rem;
+  
+}
+body{
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
