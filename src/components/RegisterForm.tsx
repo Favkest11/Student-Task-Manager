@@ -1,5 +1,7 @@
 import { useState, type FormEvent} from 'react'
 import { supabase } from '../lib/supabase';
+import { GraduationCap } from 'lucide-react';
+import styles from '../styles/RegisterForm.module.css'
  type UserRole='student' |'teacher';
 
    function RegisterForm(){
@@ -39,23 +41,40 @@ import { supabase } from '../lib/supabase';
       }
     }
     return(
-      <div>
+      <div className={styles.container}>
+        <div className={styles.card}>
+        <div className={styles.header}>
+          <div className={styles.iconWrapper}>
+            <GraduationCap size={24}/>
+          </div>
+          <h1 className={styles.title}>Create Account</h1>
+          <p className={styles.subtitle}>Join Student Task Manager to organize your academic life</p>
+          </div>
           <form onSubmit={handleRegister} >
-        <label>Email
-          <input required name='email' type='email' placeholder='example@gmail.com'></input>
+            <div className={styles.formGroup}>
+        <label className={styles.label}>Email
+          <input required name='email' type='email' placeholder='example@gmail.com' className={styles.input}></input>
         </label>
-        <label>Password
-          <input required name='password' type='password' placeholder='passwordexample123' minLength={9}></input>
+        </div>
+            <div className={styles.formGroup}>
+        <label className={styles.label}>Password
+          <input required name='password' type='password' placeholder='passwordexample123' minLength={9} className={styles.input}></input>
         </label>
+        </div>
        <label>
          <select name='role' defaultValue={'student'}>
             <option value={'student'}>Student</option>
             <option value={'teacher'}>Teacher</option>
          </select>
         </label>
-        <button type='submit' disabled={loading}>Create Acc</button>
+        <button type="submit" className={styles.submitBtn} disabled={loading}>
+            {loading ? 'Creating...' : 'Create Account'}
+          </button>
+        
       </form>
       </div>
+      </div>
+
     )
       
     
