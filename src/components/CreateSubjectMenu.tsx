@@ -1,7 +1,9 @@
 import { useState, type FormEvent} from 'react'
 import { supabase } from '../lib/supabase';
-
-function CreateSubjectMenu()
+interface CreateSubjectMenuProps{
+    onRequestUpdate:()=>void;
+}
+function CreateSubjectMenu({onRequestUpdate}:CreateSubjectMenuProps)
 {
     const[loading,setLoading]=useState<boolean>(false);
     const handleCreateSubject=async(e:FormEvent<HTMLFormElement>)=>
@@ -25,7 +27,9 @@ function CreateSubjectMenu()
                 teacher_id:user.id,
             })
             if (error) throw error;
+             onRequestUpdate();
         }
+       
         catch(error:any){
             alert('Something went wrong,try again')
         }
