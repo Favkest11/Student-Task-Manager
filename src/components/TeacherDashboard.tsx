@@ -36,19 +36,45 @@ function TeacherDashboard()
     useEffect(() => {
     fetchSubjects();
     }, []);
-    const handleDeleteSubject=async(id:string)=>{
+    const handleDeleteSubject=async(id:string)=>
+    {
         const isConfirmed = window.confirm("Are you sure you want to delete this subject");
-    if (!isConfirmed) return;
-    const {error}=await supabase
-    .from('subjects')
-    .delete()
-    .eq('id',id);
-    if(error){
-        alert("something went wrong")
+        if (!isConfirmed) return;
+        const {error}=await supabase
+        .from('subjects')
+        .delete()
+        .eq('id',id);
+        if(error){
+            alert("something went wrong")
+        }
+        else{
+            fetchSubjects();
+        }
     }
-    else{
-        fetchSubjects();
+     const [editingId, setEditingId] = useState<string | null>(null);
+    const [editTitle, setEditTitle] = useState('');
+    const [editDescription, setEditDescription] = useState('');
+    const startEditing = (subject: Subject) => {
+    setEditingId(subject.id); 
+    setEditTitle(subject.title); 
+    setEditDescription(subject.description); 
     }
+    const handeEditSubject=async(e: React.FormEvent,id:string)=>{
+        e.preventDefault();
+        const{error}=await supabase
+        .from("subjects")
+        .update({
+            title:editTitle,
+            description:editDescription
+        })
+        .eq("id",id)
+        if(error){
+            alert(error.message);
+        }
+        else{
+            setEditingId(null);
+            fetchSubjects();
+        }
     }
     return(
         <div>
@@ -61,8 +87,20 @@ function TeacherDashboard()
             <ul>
                 {subjects.map(subject=>(
                     <li key={subject.id}>{subject.title} - {subject.description}
+                    {editingId === subject.id ? (
+                    <div>
+                        <form onSubmit={(e) => handeEditSubject(e, subject.id)}>
+                            <label>Subject Name</label>
+                            <input required type='text' name='title' value={editTitle} onChange={(e) => setEditTitle(e.target.value)}></input>
+                            <label>Subject Description</label>
+                            <input  type='text' name='description' value={editDescription} onChange={(e) => setEditDescription(e.target.value)}></input>
+                            <button type='submit'>Save Changes</button>
+                            <button type='button' onClick={()=>setEditingId(null)}>Cancel</button>
+                        </form>
+                    </div> 
+                    ): null}
                     <button onClick={()=>handleDeleteSubject(subject.id)}>Delete</button>
-                    <button>Edit</button>
+                    <button onClick={()=>startEditing(subject)}>Edit</button>
                     <button>Manage Tasks</button>
                     </li>
                 ))}

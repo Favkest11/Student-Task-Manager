@@ -43,7 +43,7 @@ function CreateSubjectMenu({onRequestUpdate}:CreateSubjectMenuProps)
             <input required type='text' name='title'></input>
             <label>Subject Description</label>
             <input  type='text' name='description'></input>
-            <button type='submit'>Create Subject</button>
+            <button type='submit' disabled={loading}>Create Subject</button>
             </form>
         </div>
     )
