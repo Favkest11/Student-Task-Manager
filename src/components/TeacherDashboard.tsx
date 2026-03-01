@@ -1,6 +1,7 @@
 import { useState,useEffect} from 'react'
 import { supabase } from '../lib/supabase';
 import CreateSubjectMenu from './CreateSubjectMenu';
+import ManageTasks from './ManageTasks';
 export interface Task{
     id: string;
     title:string;
@@ -17,6 +18,7 @@ function TeacherDashboard()
 {
     const [showCreateSubject,setShowCreateSubject]=useState<boolean>(false);
     const [subjects,setSubjects]=useState<Subject[]>([]);
+    const [managingSubject, setManagingSubject] = useState<Subject | null>(null);
     const fetchSubjects=async ()=> 
     {
         const{data:{user}}=await supabase.auth.getUser();
@@ -101,7 +103,8 @@ function TeacherDashboard()
                     ): null}
                     <button onClick={()=>handleDeleteSubject(subject.id)}>Delete</button>
                     <button onClick={()=>startEditing(subject)}>Edit</button>
-                    <button>Manage Tasks</button>
+                    <button onClick={() => setManagingSubject(subject)}>Manage Tasks</button>
+                    {managingSubject===subject ? <ManageTasks subjectId={managingSubject.id} onClose={() => setManagingSubject(null)} /> : null}
                     </li>
                 ))}
             </ul>
