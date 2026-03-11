@@ -11,6 +11,10 @@ function ManageTasks({ subjectId, onClose }: ManageTasksProps){
     const[loading,setLoading]=useState<boolean>(false)
     const[showAddTaskMenu,setShowAddTaskMenu]=useState<boolean>(false);
     const[tasks,setTasks]=useState<Task[]>([])
+    const[editTitle,setEditTitle]=useState('');
+    const[editDescription,setEditDescription]=useState('');
+    const[editDeadline,setEditDeadline]=useState('');
+    const[editingId,setEditingId]=useState<string |null>(null);
     const handleAddTask=async(e:FormEvent<HTMLFormElement>)=>{
         e.preventDefault();
         setLoading(true);
@@ -55,7 +59,7 @@ function ManageTasks({ subjectId, onClose }: ManageTasksProps){
      useEffect(() => {
         fetchTasks();
     }, []);
-    const deleteTask=async(id:string)=>{
+    const handleDeleteTask=async(id:string)=>{
          const isConfirmed = window.confirm("Are you sure you want to delete this task");
         if (!isConfirmed) return;
         const{error}=await supabase
@@ -69,8 +73,30 @@ function ManageTasks({ subjectId, onClose }: ManageTasksProps){
             fetchTasks();
         }
     }
-    const editTask=async()=>{
-        
+    const startEditing=(task:Task)=>{
+        setEditingId(task.id);
+        setEditTitle(task.title);
+        setEditDescription(task.description);
+        setEditDeadline(task.deadline);
+
+    }
+    const handleEditTask=async(id:string,e:FormEvent<HTMLFormElement>)=>{
+        e.preventDefault();
+        const{error}=await supabase
+        .from('tasks')
+        .update({
+            title:editTitle,
+            description:editDescription,
+            deadline:editDeadline
+        })
+        .eq('id',id)
+        if(error){
+            alert(error.message);
+        }
+        else{
+            fetchTasks();
+            setEditingId(null);
+        }
     }
     return(
         <div>
@@ -89,12 +115,26 @@ function ManageTasks({ subjectId, onClose }: ManageTasksProps){
             </div> 
             
             : null}
-            {tasks===null ? <h1>You have no tasks</h1> : 
+            {tasks.length===0 ? <h1>You have no tasks</h1> : 
             <ul>
             {tasks.map(task=>(
                 <li key={task.id}>{task.title}- description:{task.description}-deadline:{task.deadline}
-                <button onClick={()=>deleteTask(task.id)}>Delete</button>
-                <button>Edit</button>
+                <button onClick={()=>handleDeleteTask(task.id)}>Delete</button>
+                <button onClick={()=>startEditing(task)}>Edit</button>
+                {editingId===task.id ?(
+                    <div>
+                        <form onSubmit={(e) => handleEditTask(task.id,e)}>
+                            <label>Task title</label>
+                            <input required type='text' name='title' value={editTitle} onChange={(e)=>setEditTitle(e.target.value)}></input>
+                            <label>Task Description</label>
+                            <input  type='text' name='description' value={editDescription} onChange={(e)=>setEditDescription(e.target.value)}></input>
+                            <label>Deadline</label>
+                            <input required type='datetime-local' name='deadline' value={editDeadline} onChange={(e)=>setEditDeadline(e.target.value)}></input>
+                            <button type='submit'>Save changes</button>
+                            <button type="button" onClick={()=>setEditingId(null)}>Cancel</button>
+                        </form>
+                    </div>
+                ):null}
                 </li>
                 
             ))}

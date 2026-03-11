@@ -78,6 +78,7 @@ function TeacherDashboard()
             fetchSubjects();
         }
     }
+   
     return(
         <div>
             <h1>Teacher</h1>
