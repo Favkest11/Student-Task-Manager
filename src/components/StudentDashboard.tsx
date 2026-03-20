@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
-import { Search, Calendar, LayoutDashboard, BookOpen, BarChart2, CheckCircle2, Circle, GraduationCap } from 'lucide-react';
+import { Search, Calendar, CheckCircle2, Circle } from 'lucide-react';
 import './StudentDashboard.css';
 export interface StudentTask {
     id: string;
