@@ -1,12 +1,16 @@
 import { useState,useEffect,type FormEvent } from "react";
 import { supabase } from "../lib/supabase";
-import  { type Task }  from "./TeacherDashboard";
+interface Task{
+id:string;
+title:string;
+description:string;
+deadline:string;
+}
 interface ManageTasksProps {
     subjectId: string;
     onClose: () => void;
     
 }
-
 function ManageTasks({ subjectId, onClose }: ManageTasksProps){
     const[loading,setLoading]=useState<boolean>(false)
     const[showAddTaskMenu,setShowAddTaskMenu]=useState<boolean>(false);
@@ -98,49 +102,77 @@ function ManageTasks({ subjectId, onClose }: ManageTasksProps){
             setEditingId(null);
         }
     }
-    return(
-        <div>
-            <button onClick={()=>setShowAddTaskMenu(!showAddTaskMenu)}>Add Task</button>
-            {showAddTaskMenu ? 
-            <div>  
-                <form onSubmit={handleAddTask}>
-                    <label>Task title</label>
-                    <input required type='text' name='title'></input>
-                    <label>Task Description</label>
-                    <input  type='text' name='description'></input>
-                    <label>Deadline</label>
-                    <input required type='datetime-local' name='deadline'></input>
-                    <button type='submit' disabled={loading}>Add task</button>
-                </form>
-            </div> 
-            
-            : null}
-            {tasks.length===0 ? <h1>You have no tasks</h1> : 
-            <ul>
-            {tasks.map(task=>(
-                <li key={task.id}>{task.title}- description:{task.description}-deadline:{task.deadline}
-                <button onClick={()=>handleDeleteTask(task.id)}>Delete</button>
-                <button onClick={()=>startEditing(task)}>Edit</button>
-                {editingId===task.id ?(
-                    <div>
-                        <form onSubmit={(e) => handleEditTask(task.id,e)}>
-                            <label>Task title</label>
-                            <input required type='text' name='title' value={editTitle} onChange={(e)=>setEditTitle(e.target.value)}></input>
-                            <label>Task Description</label>
-                            <input  type='text' name='description' value={editDescription} onChange={(e)=>setEditDescription(e.target.value)}></input>
-                            <label>Deadline</label>
-                            <input required type='datetime-local' name='deadline' value={editDeadline} onChange={(e)=>setEditDeadline(e.target.value)}></input>
-                            <button type='submit'>Save changes</button>
-                            <button type="button" onClick={()=>setEditingId(null)}>Cancel</button>
-                        </form>
-                    </div>
-                ):null}
-                </li>
-                
-            ))}
-                
-            </ul>
-            }
+    return (
+        <div className="manage-tasks-container">
+            {!showAddTaskMenu && (
+                <button className="btn-add-task" onClick={() => setShowAddTaskMenu(true)}>
+                    <i className="fa-solid fa-plus"></i> Add Task
+                </button>
+            )}
+            {showAddTaskMenu && (
+                <div className="task-form">
+                    <h4 style={{ marginTop: 0 }}>Create New Task</h4>
+                    <form onSubmit={handleAddTask}>
+                        <label>Task Title</label>
+                        <input required type='text' name='title' placeholder="e.g. Complete Calculus Assignment" />
+                        
+                        <label>Description</label>
+                        <input type='text' name='description' placeholder="e.g. Solve problems 1-20" />
+                        
+                        <label>Deadline</label>
+                        <input required type='datetime-local' name='deadline' />
+                        
+                        <div className="task-form-actions">
+                            <button type='button' className="btn-manage" onClick={() => setShowAddTaskMenu(false)}>Cancel</button>
+                            <button type='submit' className="btn-primary" disabled={loading}>Save Task</button>
+                        </div>
+                    </form>
+                </div>
+            )}
+            <div className="tasks-count">
+                Tasks ({tasks.length})
+            </div>
+            {tasks.length === 0 ? (
+                <p style={{ color: '#6b7280', textAlign: 'center', padding: '20px 0' }}>No tasks assigned yet.</p>
+            ) : (
+                <ul className="tasks-list">
+                    {tasks.map(task => (
+                        <li key={task.id} className="task-card">
+                            {editingId === task.id ? (
+                                <form onSubmit={(e) => handleEditTask(task.id, e)} style={{ width: '100%' }}>
+                                    <input required type='text' name='title' value={editTitle} onChange={(e) => setEditTitle(e.target.value)} />
+                                    <input type='text' name='description' value={editDescription} onChange={(e) => setEditDescription(e.target.value)} />
+                                    <input required type='datetime-local' name='deadline' value={editDeadline} onChange={(e) => setEditDeadline(e.target.value)} />
+                                    <div className="task-form-actions">
+                                        <button type="button" className="btn-manage" onClick={() => setEditingId(null)}>Cancel</button>
+                                        <button type='submit' className="btn-primary">Save changes</button>
+                                    </div>
+                                </form>
+                            ) : (
+                                <>
+                                    <div className="task-info">
+                                        <h4>{task.title}</h4>
+                                        <p>{task.description}</p>
+                                        <div className="task-deadline">
+                                            <i className="fa-regular fa-calendar"></i> 
+                                            Due: {new Date(task.deadline).toLocaleString()}
+                                        </div>
+                                    </div>
+                                    <div className="task-actions">
+                                        <button onClick={() => startEditing(task)}><i className="fa-solid fa-pencil"></i></button>
+                                        <button className="delete-btn" onClick={() => handleDeleteTask(task.id)}><i className="fa-solid fa-trash"></i></button>
+                                    </div>
+                                </>
+                            )}
+                        </li>
+                    ))}
+                </ul>
+            )}
+            <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '20px', borderTop: '1px solid #e5e7eb', paddingTop: '20px' }}>
+                <button className="btn-manage" style={{ width: 'auto', padding: '8px 24px' }} onClick={onClose}>
+                    Close
+                </button>
+            </div>
         </div>
     )
 }

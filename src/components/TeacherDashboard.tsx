@@ -1,116 +1,166 @@
-import { useState,useEffect} from 'react'
 import { supabase } from '../lib/supabase';
-import CreateSubjectMenu from './CreateSubjectMenu';
+import { useState, useEffect, type FormEvent } from 'react';
 import ManageTasks from './ManageTasks';
-export interface Task{
-    id: string;
-    title:string;
-    description:string;
-    deadline:string;
-    teacher_id:string;
-}
-export interface Subject{
-    id:string;
-    title:string;
-    description:string;
-}
-function TeacherDashboard()
-{
-    const [showCreateSubject,setShowCreateSubject]=useState<boolean>(false);
-    const [subjects,setSubjects]=useState<Subject[]>([]);
+import './TeacherDashboard.css';
+
+export interface Subject { id: string; title: string; description: string; created_at: string; }
+
+function TeacherDashboard() {
+    const [subjects, setSubjects] = useState<Subject[]>([]);
     const [managingSubject, setManagingSubject] = useState<Subject | null>(null);
-    const fetchSubjects=async ()=> 
-    {
-        const{data:{user}}=await supabase.auth.getUser();
-        if(!user)return;
-        const{data,error}=await supabase
-        .from('subjects')
-        .select('*')
-        .eq('teacher_id',user.id)
-        .order('created_at', { ascending: false });
-        if(error){
-            console.error("error");
-        }
-        else{
-            setSubjects(data||[])
-        }
-    }
-    useEffect(() => {
-    fetchSubjects();
-    }, []);
-    const handleDeleteSubject=async(id:string)=>
-    {
-        const isConfirmed = window.confirm("Are you sure you want to delete this subject");
-        if (!isConfirmed) return;
-        const {error}=await supabase
-        .from('subjects')
-        .delete()
-        .eq('id',id);
-        if(error){
-            alert("something went wrong")
-        }
-        else{
-            fetchSubjects();
-        }
-    }
-     const [editingId, setEditingId] = useState<string | null>(null);
+    const [editingSubject, setEditingSubject] = useState<Subject | null>(null);
+    const [isCreatingSubject, setIsCreatingSubject] = useState<boolean>(false); 
     const [editTitle, setEditTitle] = useState('');
     const [editDescription, setEditDescription] = useState('');
-    const startEditing = (subject: Subject) => {
-    setEditingId(subject.id); 
-    setEditTitle(subject.title); 
-    setEditDescription(subject.description); 
+    const fetchSubjects = async () => {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) return;
+        const { data, error } = await supabase.from('subjects').select('*').eq('teacher_id', user.id);
+        if (error) alert(error.message);
+        else setSubjects(data || []);
     }
-    const handeEditSubject=async(e: React.FormEvent,id:string)=>{
+ useEffect(() => { fetchSubjects(); }, []);
+    const handleCreateSubject = async (e: FormEvent) => {
         e.preventDefault();
-        const{error}=await supabase
-        .from("subjects")
-        .update({
-            title:editTitle,
-            description:editDescription
-        })
-        .eq("id",id)
-        if(error){
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) return;
+
+        const { error } = await supabase.from('subjects').insert([
+            { title: editTitle, description: editDescription, teacher_id: user.id }
+        ]);
+
+        if (error) {
             alert(error.message);
+        } else {
+            setIsCreatingSubject(false); 
+            setEditTitle('');      
+            setEditDescription('');
+            fetchSubjects();             
         }
-        else{
-            setEditingId(null);
+    }
+
+    const saveEditSubject = async (e: FormEvent) => {
+        e.preventDefault();
+        if (!editingSubject) return;
+        const { error } = await supabase.from('subjects').update({ title: editTitle, description: editDescription }).eq('id', editingSubject.id);
+        if (error) alert(error.message);
+        else {
+            setEditingSubject(null);
             fetchSubjects();
         }
     }
-   
-    return(
-        <div>
-            <h1>Teacher</h1>
-        <button onClick={() => supabase.auth.signOut()}>Sign Out</button>
-        <button onClick={()=> setShowCreateSubject(!showCreateSubject)}>Add Subject</button>
-        {showCreateSubject && (
-                <CreateSubjectMenu onRequestUpdate={fetchSubjects} />
-            )}
-            <ul>
-                {subjects.map(subject=>(
-                    <li key={subject.id}>{subject.title} - {subject.description}
-                    {editingId === subject.id ? (
-                    <div>
-                        <form onSubmit={(e) => handeEditSubject(e, subject.id)}>
-                            <label>Subject Name</label>
-                            <input required type='text' name='title' value={editTitle} onChange={(e) => setEditTitle(e.target.value)}></input>
-                            <label>Subject Description</label>
-                            <input  type='text' name='description' value={editDescription} onChange={(e) => setEditDescription(e.target.value)}></input>
-                            <button type='submit'>Save Changes</button>
-                            <button type='button' onClick={()=>setEditingId(null)}>Cancel</button>
-                        </form>
-                    </div> 
-                    ): null}
-                    <button onClick={()=>handleDeleteSubject(subject.id)}>Delete</button>
-                    <button onClick={()=>startEditing(subject)}>Edit</button>
-                    <button onClick={() => setManagingSubject(subject)}>Manage Tasks</button>
-                    {managingSubject===subject ? <ManageTasks subjectId={managingSubject.id} onClose={() => setManagingSubject(null)} /> : null}
-                    </li>
-                ))}
-            </ul>
-        </div>
-    )
-}
 
+    const handleDeleteSubject = async (id: string) => {
+        if (!window.confirm("Delete subject?")) return;
+        const { error } = await supabase.from('subjects').delete().eq('id', id);
+        if (error) alert(error.message);
+        else fetchSubjects();
+    }
+
+    const startEditing = (subject: Subject) => {
+        setEditingSubject(subject);
+        setEditTitle(subject.title);
+        setEditDescription(subject.description);
+    }
+    const startCreating = () => {
+        setEditTitle(''); 
+        setEditDescription('');
+        setIsCreatingSubject(true);
+    }
+
+    return (
+        <div className="dashboard-container">
+            
+            <div className="dashboard-header">
+                 <h1>My Subjects</h1>
+                    <div className="user-profile">
+                        <strong>teacher</strong>
+                        <button 
+                            onClick={() => supabase.auth.signOut()} 
+                            style={{ background: 'none', border: 'none', color: '#ef4444', cursor: 'pointer', fontSize: '12px', padding: 0, marginTop: '4px' }}
+                        >
+                            Sign Out
+                        </button>
+                    </div>
+            </div>
+
+            <div className="sub-header">
+                <div>
+                    <h2>Subject Management</h2>
+                    <p>Create and manage your subjects and assignments</p>
+                </div>
+                <button className="btn-primary" onClick={startCreating}>+ Add Subject</button>
+            </div>
+
+            <div className="subjects-grid">
+                {subjects.map((subject, index) => {
+                    const colors = ['icon-blue', 'icon-purple', 'icon-green'];
+                    const iconClass = colors[index % colors.length];
+                    return (
+                        <div key={subject.id} className="subject-card">
+                            <div className="card-top">
+                                <div className={`subject-icon ${iconClass}`}>📖</div>
+                                <div className="card-actions">
+                                    <button onClick={() => startEditing(subject)}>✏️</button>
+                                    <button onClick={() => handleDeleteSubject(subject.id)}>🗑️</button>
+                                </div>
+                            </div>
+                            
+                            <h3 className="card-title">{subject.title}</h3>
+                            <p className="card-desc">{subject.description}</p>
+                            
+                            <button className="btn-manage" onClick={() => setManagingSubject(subject)}>
+                                Manage Tasks
+                            </button>
+                        </div>
+                    );
+                })}
+            </div>
+            {isCreatingSubject && (
+                <div className="modal-overlay">
+                    <div className="modal-content">
+                        <button className="close-btn" onClick={() => setIsCreatingSubject(false)}>×</button>
+                        <h2>Create New Subject</h2>
+                        <form onSubmit={handleCreateSubject}>
+                            <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold' }}>Title</label>
+                            <input value={editTitle} onChange={e => setEditTitle(e.target.value)} placeholder="e.g. Mathematics" required />
+                            
+                            <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold' }}>Description</label>
+                            <input value={editDescription} onChange={e => setEditDescription(e.target.value)} placeholder="Short description" />
+                            
+                            <button type="submit" className="btn-primary" style={{ marginTop: '10px' }}>Create Subject</button>
+                        </form>
+                    </div>
+                </div>
+            )}
+            {editingSubject && (
+                <div className="modal-overlay">
+                    <div className="modal-content">
+                        <button className="close-btn" onClick={() => setEditingSubject(null)}>×</button>
+                        <h2>Edit Subject</h2>
+                        <form onSubmit={saveEditSubject}>
+                            <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold' }}>Title</label>
+                            <input value={editTitle} onChange={e => setEditTitle(e.target.value)} required />
+                            
+                            <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold' }}>Description</label>
+                            <input value={editDescription} onChange={e => setEditDescription(e.target.value)} />
+                            
+                            <button type="submit" className="btn-primary" style={{ marginTop: '10px' }}>Save Changes</button>
+                        </form>
+                    </div>
+                </div>
+            )}
+            {managingSubject && (
+                <div className="modal-overlay">
+                    <div className="modal-content" style={{ maxWidth: '800px' }}>
+                        <button className="close-btn" onClick={() => setManagingSubject(null)}>×</button>
+                        <h2>{managingSubject.title} - Tasks</h2>
+                        <ManageTasks subjectId={managingSubject.id} onClose={() => setManagingSubject(null)} />
+                    </div>
+                </div>
+            )}
+
+        </div>
+    );
+}
 export default TeacherDashboard;

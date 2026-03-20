@@ -1,4 +1,4 @@
-import { useState,useEffect, type FormEvent} from 'react'
+import { useState, useEffect } from 'react'
 import './App.css'
 import { supabase } from './lib/supabase'
 import RegisterForm from './components/RegisterForm';
@@ -6,10 +6,10 @@ import LoginForm from './components/LoginForm';
 import StudentDashboard from './components/StudentDashboard';
 import TeacherDashboard from './components/TeacherDashboard';
 function App() {
-  const [isLogin,setIsLogin]=useState<boolean>(true);
-  const[user,setUser]=useState<any>(null);
+  const [isLogin, setIsLogin] = useState<boolean>(true);
+  const [user, setUser] = useState<any>(null);
+
   useEffect(() => {
-    
     supabase.auth.getSession().then(({ data: { session } }) => {
       setUser(session?.user ?? null)
     })
@@ -20,27 +20,25 @@ function App() {
 
     return () => subscription.unsubscribe()
   }, [])
-  if(user)
-  {
-    const role=user.user_metadata.role;
-    if(role=="teacher")
-    {
-      return <TeacherDashboard/>
+  if (user) {
+    const role = user.user_metadata?.role;
+    if (role === "teacher") {
+      return <TeacherDashboard />
     }
-    if(role=="student")
-    {
-      return <StudentDashboard/>
+    if (role === "student") {
+      return <StudentDashboard />
     }
-
-
+    return <StudentDashboard /> 
   }
+
   return (
     <div>
-      {isLogin? <LoginForm/> : <RegisterForm/>}
-      <button className='btnswitch-signup-signin' onClick={()=>(setIsLogin(!isLogin))}>{isLogin? 'U have dont have an account sign Up' : 'Already have an account?'}</button>
-
+      {isLogin ? (
+        <LoginForm onSwitchToRegister={() => setIsLogin(false)} />
+      ) : (
+        <RegisterForm onSwitchToLogin={() => setIsLogin(true)} />
+      )}
     </div>
-    
   )
 }
 

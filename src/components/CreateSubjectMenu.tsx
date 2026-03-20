@@ -16,7 +16,7 @@ function CreateSubjectMenu({onRequestUpdate}:CreateSubjectMenuProps)
         const { data: { user } } = await supabase.auth.getUser();
         if (!user) 
         {
-            alert('You r not logged in');
+            alert('You are not logged in');
             setLoading(false);
             return;
         }
@@ -29,12 +29,11 @@ function CreateSubjectMenu({onRequestUpdate}:CreateSubjectMenuProps)
             if (error) throw error;
              onRequestUpdate();
         }
-       
+    
         catch(error:any){
             alert('Something went wrong,try again')
         }
         finally{setLoading(false)}
-
     }
     return(
         <div>
