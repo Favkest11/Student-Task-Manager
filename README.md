@@ -7,6 +7,7 @@ A full-stack web application for academic task management with role-based access
 ---
 
 ## 📸 Screenshots
+<img width="1920" height="825" alt="image" src="https://github.com/user-attachments/assets/f3f17246-89ca-4872-a76f-ff30c4b233ee" />
 <img width="1918" height="808" alt="image" src="https://github.com/user-attachments/assets/3b8452bd-efcf-4f20-8ffb-a085c0498659" />
 <img width="1916" height="773" alt="image" src="https://github.com/user-attachments/assets/ba359f9b-1da0-4aed-a61f-ce325a7af8fc" />
 
