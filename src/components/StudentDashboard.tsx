@@ -1,19 +1,9 @@
 import { useState, useEffect } from 'react';
-import { supabase } from '../lib/supabase';
+import { api, auth, type Subject, type Task } from '../lib/api';
 import { Search, Calendar, CheckCircle2, Circle } from 'lucide-react';
 import './StudentDashboard.css';
-export interface StudentTask {
-    id: string;
-    title: string;
-    description: string;
-    deadline: string;
-    status: string;
-    subjects: { title: string; } | null;
-}
-export interface Subject {
-    id: string;
-    title: string;
-}
+export type StudentTask = Task;
+export type { Subject };
 function StudentDashboard() {
     const [tasks, setTasks] = useState<StudentTask[]>([]);
     const [subjectList, setSubjectList] = useState<Subject[]>([]);
@@ -24,22 +14,19 @@ function StudentDashboard() {
     const [selectedDeadline, setSelectedDeadline] = useState('All Deadlines');
 
     const fetchTasks = async () => {
-        const { data, error } = await supabase
-            .from('tasks')
-            .select('*,subjects(title)')
-            .order('created_at', { ascending: false });
-            
-        if (error) {
+        try {
+            setTasks(await api.tasks.list());
+        } catch (error: any) {
             alert(error.message);
-        } else {
-            setTasks(data as unknown as StudentTask[] || []);
         }
     }
 
     const fetchSubjects = async () => {
-        const { data, error } = await supabase.from('subjects').select('*');
-        if (error) alert(error.message);
-        else setSubjectList(data || []);
+        try {
+            setSubjectList(await api.subjects.list());
+        } catch (error: any) {
+            alert(error.message);
+        }
     }
 
     useEffect(() => {
@@ -48,15 +35,12 @@ function StudentDashboard() {
     }, []);
     const toggleTaskStatus = async (task: StudentTask) => {
         const newStatus = (task.status || 'To Do') === 'Done' ? 'To Do' : 'Done';
-        const { error } = await supabase
-            .from('tasks')
-            .update({ status: newStatus })
-            .eq('id', task.id);
-            
-        if (error) {
-            alert(error.message);
-        } else {
+        try {
+            // Saved for the current student only; other students keep their own status.
+            await api.tasks.setStatus(task.id, newStatus);
             fetchTasks();
+        } catch (error: any) {
+            alert(error.message);
         }
     };
     const filteredTasks = tasks.filter(task => {
@@ -98,7 +82,7 @@ function StudentDashboard() {
                     <div className="user-profile">
                         <strong>student</strong>
                         <button 
-                            onClick={() => supabase.auth.signOut()} 
+                            onClick={() => auth.logout()}
                             style={{ background: 'none', border: 'none', color: '#ef4444', cursor: 'pointer', fontSize: '12px', padding: 0, marginTop: '4px' }}
                         >
                             Sign Out

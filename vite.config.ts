@@ -10,4 +10,10 @@ export default defineConfig({
       },
     }),
   ],
+  server: {
+    // In development, requests to /api go to the backend from the /server folder.
+    proxy: {
+      '/api': 'http://localhost:3001',
+    },
+  },
 })

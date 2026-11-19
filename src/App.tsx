@@ -1,34 +1,28 @@
 import { useState, useEffect } from 'react'
-import './App.css'
-import { supabase } from './lib/supabase'
+import { auth, type User } from './lib/api'
 import RegisterForm from './components/RegisterForm';
 import LoginForm from './components/LoginForm';
 import StudentDashboard from './components/StudentDashboard';
 import TeacherDashboard from './components/TeacherDashboard';
 function App() {
   const [isLogin, setIsLogin] = useState<boolean>(true);
-  const [user, setUser] = useState<any>(null);
+  const [user, setUser] = useState<User | null>(null);
+  // false until the saved session has been checked, so the login form does not flash on reload
+  const [ready, setReady] = useState<boolean>(false);
 
   useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setUser(session?.user ?? null)
-    })
-
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      setUser(session?.user ?? null)
-    })
-
-    return () => subscription.unsubscribe()
+    const unsubscribe = auth.onChange(setUser)
+    auth.restore().finally(() => setReady(true))
+    return unsubscribe
   }, [])
+  if (!ready) {
+    return null
+  }
   if (user) {
-    const role = user.user_metadata?.role;
-    if (role === "teacher") {
+    if (user.role === "teacher") {
       return <TeacherDashboard />
     }
-    if (role === "student") {
-      return <StudentDashboard />
-    }
-    return <StudentDashboard /> 
+    return <StudentDashboard />
   }
 
   return (

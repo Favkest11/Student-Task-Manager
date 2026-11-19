@@ -1,5 +1,5 @@
 import { useState, type FormEvent } from 'react'
-import { supabase } from '../lib/supabase';
+import { auth } from '../lib/api';
 import styles from '../styles/LoginForm.module.css'
 import { GraduationCap } from 'lucide-react';
 interface LoginFormProps {
@@ -17,11 +17,7 @@ function LoginForm({ onSwitchToRegister }: LoginFormProps) {
         const password = formData.get('password') as string;
 
         try {
-            const { error } = await supabase.auth.signInWithPassword({
-                email,
-                password,
-            });
-            if (error) throw error;
+            await auth.login(email, password);
         } catch (error: any) {
             alert('Ошибка входа: ' + error.message);
         } finally {

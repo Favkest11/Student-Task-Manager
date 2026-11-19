@@ -1,5 +1,5 @@
 import { useState, type FormEvent} from 'react'
-import { supabase } from '../lib/supabase';
+import { api } from '../lib/api';
 interface CreateSubjectMenuProps{
     onRequestUpdate:()=>void;
 }
@@ -13,20 +13,11 @@ function CreateSubjectMenu({onRequestUpdate}:CreateSubjectMenuProps)
         const formData= new FormData(e.currentTarget);
         const title=formData.get('title') as string;
         const description=formData.get('description') as string;
-        const { data: { user } } = await supabase.auth.getUser();
-        if (!user) 
-        {
-            alert('You are not logged in');
-            setLoading(false);
-            return;
-        }
         try{
-            const{error}=await supabase.from('subjects').insert({
+            await api.subjects.create({
                 title,
                 description,
-                teacher_id:user.id,
             })
-            if (error) throw error;
              onRequestUpdate();
         }
     

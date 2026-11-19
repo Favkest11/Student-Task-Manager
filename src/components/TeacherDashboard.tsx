@@ -1,9 +1,9 @@
-import { supabase } from '../lib/supabase';
+import { api, auth, type Subject } from '../lib/api';
 import { useState, useEffect, type FormEvent } from 'react';
 import ManageTasks from './ManageTasks';
 import './TeacherDashboard.css';
 
-export interface Subject { id: string; title: string; description: string; created_at: string; }
+export type { Subject };
 
 function TeacherDashboard() {
     const [subjects, setSubjects] = useState<Subject[]>([]);
@@ -13,48 +13,47 @@ function TeacherDashboard() {
     const [editTitle, setEditTitle] = useState('');
     const [editDescription, setEditDescription] = useState('');
     const fetchSubjects = async () => {
-        const { data: { user } } = await supabase.auth.getUser();
-        if (!user) return;
-        const { data, error } = await supabase.from('subjects').select('*').eq('teacher_id', user.id);
-        if (error) alert(error.message);
-        else setSubjects(data || []);
+        // The server returns only the subjects of the logged-in teacher.
+        try {
+            setSubjects(await api.subjects.list());
+        } catch (error: any) {
+            alert(error.message);
+        }
     }
  useEffect(() => { fetchSubjects(); }, []);
     const handleCreateSubject = async (e: FormEvent) => {
         e.preventDefault();
-        const { data: { user } } = await supabase.auth.getUser();
-        if (!user) return;
-
-        const { error } = await supabase.from('subjects').insert([
-            { title: editTitle, description: editDescription, teacher_id: user.id }
-        ]);
-
-        if (error) {
-            alert(error.message);
-        } else {
-            setIsCreatingSubject(false); 
-            setEditTitle('');      
+        try {
+            await api.subjects.create({ title: editTitle, description: editDescription });
+            setIsCreatingSubject(false);
+            setEditTitle('');
             setEditDescription('');
-            fetchSubjects();             
+            fetchSubjects();
+        } catch (error: any) {
+            alert(error.message);
         }
     }
 
     const saveEditSubject = async (e: FormEvent) => {
         e.preventDefault();
         if (!editingSubject) return;
-        const { error } = await supabase.from('subjects').update({ title: editTitle, description: editDescription }).eq('id', editingSubject.id);
-        if (error) alert(error.message);
-        else {
+        try {
+            await api.subjects.update(editingSubject.id, { title: editTitle, description: editDescription });
             setEditingSubject(null);
             fetchSubjects();
+        } catch (error: any) {
+            alert(error.message);
         }
     }
 
     const handleDeleteSubject = async (id: string) => {
         if (!window.confirm("Delete subject?")) return;
-        const { error } = await supabase.from('subjects').delete().eq('id', id);
-        if (error) alert(error.message);
-        else fetchSubjects();
+        try {
+            await api.subjects.remove(id);
+            fetchSubjects();
+        } catch (error: any) {
+            alert(error.message);
+        }
     }
 
     const startEditing = (subject: Subject) => {
@@ -76,7 +75,7 @@ function TeacherDashboard() {
                     <div className="user-profile">
                         <strong>teacher</strong>
                         <button 
-                            onClick={() => supabase.auth.signOut()} 
+                            onClick={() => auth.logout()}
                             style={{ background: 'none', border: 'none', color: '#ef4444', cursor: 'pointer', fontSize: '12px', padding: 0, marginTop: '4px' }}
                         >
                             Sign Out

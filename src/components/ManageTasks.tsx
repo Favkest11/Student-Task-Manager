@@ -1,11 +1,5 @@
 import { useState,useEffect,type FormEvent } from "react";
-import { supabase } from "../lib/supabase";
-interface Task{
-id:string;
-title:string;
-description:string;
-deadline:string;
-}
+import { api, type Task } from "../lib/api";
 interface ManageTasksProps {
     subjectId: string;
     onClose: () => void;
@@ -27,15 +21,12 @@ function ManageTasks({ subjectId, onClose }: ManageTasksProps){
         const description=formData.get('description')as string;
         const deadline=formData.get('deadline') as string;
         try{
-            const {error}=await supabase
-            .from('tasks')
-            .insert({
+            await api.tasks.create({
               title,
               description,
               deadline,
-              subject_id: subjectId  
+              subjectId
             });
-            if(error) throw error;
             setShowAddTaskMenu(false);
             fetchTasks();
         }
@@ -48,16 +39,11 @@ function ManageTasks({ subjectId, onClose }: ManageTasksProps){
        
      }
      const fetchTasks=async()=>{
-        const{data,error}=await supabase
-        .from("tasks")
-        .select("*")
-        .eq('subject_id',subjectId)
-        .order('created_at', { ascending: false });
-        if(error){
-            alert(error.message)
+        try{
+            setTasks(await api.tasks.list(subjectId))
         }
-        else{
-            setTasks(data||[])
+        catch(error:any){
+            alert(error.message)
         }
      }
      useEffect(() => {
@@ -66,15 +52,12 @@ function ManageTasks({ subjectId, onClose }: ManageTasksProps){
     const handleDeleteTask=async(id:string)=>{
          const isConfirmed = window.confirm("Are you sure you want to delete this task");
         if (!isConfirmed) return;
-        const{error}=await supabase
-        .from('tasks')
-        .delete()
-        .eq('id',id);
-        if(error){
-            alert(error.message);
-        }
-        else{
+        try{
+            await api.tasks.remove(id);
             fetchTasks();
+        }
+        catch(error:any){
+            alert(error.message);
         }
     }
     const startEditing=(task:Task)=>{
@@ -86,20 +69,17 @@ function ManageTasks({ subjectId, onClose }: ManageTasksProps){
     }
     const handleEditTask=async(id:string,e:FormEvent<HTMLFormElement>)=>{
         e.preventDefault();
-        const{error}=await supabase
-        .from('tasks')
-        .update({
-            title:editTitle,
-            description:editDescription,
-            deadline:editDeadline
-        })
-        .eq('id',id)
-        if(error){
-            alert(error.message);
-        }
-        else{
+        try{
+            await api.tasks.update(id,{
+                title:editTitle,
+                description:editDescription,
+                deadline:editDeadline
+            });
             fetchTasks();
             setEditingId(null);
+        }
+        catch(error:any){
+            alert(error.message);
         }
     }
     return (

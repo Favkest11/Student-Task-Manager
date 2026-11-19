@@ -1,8 +1,7 @@
 import { useState, type FormEvent } from 'react';
-import { supabase } from '../lib/supabase';
+import { auth, type UserRole } from '../lib/api';
 import { GraduationCap } from 'lucide-react';
 import styles from '../styles/RegisterForm.module.css';
-type UserRole = 'student' | 'teacher';
 interface RegisterFormProps {
     onSwitchToLogin: () => void;
 }
@@ -18,18 +17,8 @@ function RegisterForm({ onSwitchToLogin }: RegisterFormProps) {
         const role = formData.get('role') as UserRole;
 
         try {
-            const { error } = await supabase.auth.signUp({
-                email,
-                password,
-                options: {
-                    data: {
-                        role,
-                    },
-                },
-            });
-            if (error) throw error;
-            alert('Successful, check your email');
-            onSwitchToLogin(); 
+            // The server logs the new user in right away, so the dashboard opens after this.
+            await auth.register(email, password, role);
         } catch (error: any) {
             alert('Something went wrong, try again: ' + error.message);
         } finally {
